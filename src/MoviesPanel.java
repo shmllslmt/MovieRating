@@ -80,31 +80,62 @@ public class MoviesPanel extends JPanel {
 
         JOptionPane.showMessageDialog(this, panel, "Add New Movie", JOptionPane.PLAIN_MESSAGE);
 
-        //TODO: Step 2 Extract user input from text fields
-        //TODO: Step 3 Prepare an SQL statement to insert the user input to the table 'movies' in the database
+        //Step 2 Extract user input from text fields
+        String title = txtTitle.getText();
+        int year = Integer.parseInt(txtYear.getText());
+        int duration = Integer.parseInt(txtDuration.getText());
+        String director = txtDirector.getText();
+
+        //Step 3 Prepare an SQL statement to insert the user input to the table 'movies' in the database
+        try {
+            PreparedStatement preparedStatement = database.getConnection().prepareStatement("INSERT INTO movies (title, year, duration, director) VALUES (?, ?, ?, ?);");
+
+            preparedStatement.setString(1, title);
+            preparedStatement.setInt(2, year);
+            preparedStatement.setInt(3, duration);
+            preparedStatement.setString(4, director);
+
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     public void updateMovie() {
         try {
-            //TODO: Step 4 Prepare an SQL statement to select a list of titles from the table 'movies' in the database
+            //Step 4 Prepare an SQL statement to select a list of titles from the table 'movies' in the database
+            Statement statement = database.getConnection().createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT title FROM movies");
 
             JComboBox cmbTitles = new JComboBox<>();
 
-            //TODO: Step 5 The ResultSet will be used to populate the 'cmbTitles' combobox
-            cmbTitles.addItem("");
-
+            //Step 5 The ResultSet will be used to populate the 'cmbTitles' combobox
+            while (resultSet.next()) {
+                cmbTitles.addItem(resultSet.getString("title"));
+            }
 
             JOptionPane.showMessageDialog(this, cmbTitles, "Choose Movie Title", JOptionPane.PLAIN_MESSAGE);
 
-            //TODO: Step 6 Extract user selection from the 'cmbTitles' combobox
-            //TODO: Step 7 Prepare an SQL statement to select the title, year, duration and director of the selected title from the table 'movies' in the database
+            //Step 6 Extract user selection from the 'cmbTitles' combobox
+            String selectedTitle = cmbTitles.getSelectedItem().toString();
+
+            //Step 7 Prepare an SQL statement to select the title, year, duration and director of the selected title from the table 'movies' in the database
+            PreparedStatement preparedStatement = database.getConnection().prepareStatement("SELECT title, year, duration, director FROM movies WHERE title = ?");
+            preparedStatement.setString(1, selectedTitle);
+            ResultSet movieInfo = preparedStatement.executeQuery();
 
             String title = "";
             String year = "";
             String duration = "";
             String director = "";
 
-            //TODO: Step 8 The ResultSet will be used to initialize the title, year, duration and director variables
+            //Step 8 The ResultSet will be used to initialize the title, year, duration and director variables
+            while (movieInfo.next()) {
+                title = movieInfo.getString("title");
+                year = movieInfo.getString("year");
+                duration = movieInfo.getString("duration");
+                director = movieInfo.getString("director");
+            }
 
             JPanel panel = new JPanel(new GridLayout(4, 2, 10, 10));
 
@@ -124,32 +155,51 @@ public class MoviesPanel extends JPanel {
 
             JOptionPane.showMessageDialog(this, panel, "Update Movie", JOptionPane.PLAIN_MESSAGE);
 
-            //TODO: Step 9 Extract user input from text fields
-            //TODO: Step 10 Prepare an SQL statement to update the title, year, duration and director of the selected movie
+            //Step 9 Extract user input from text fields
+            title = txtTitle.getText();
+            year = txtYear.getText();
+            duration = txtDuration.getText();
+            director = txtDirector.getText();
 
+            //Step 10 Prepare an SQL statement to update the title, year, duration and director of the selected movie
+            preparedStatement = database.getConnection().prepareStatement("UPDATE movies SET title = ?, year = ?, duration = ?, director = ? WHERE title = ?");
+            preparedStatement.setString(1, title);
+            preparedStatement.setInt(2, Integer.parseInt(year));
+            preparedStatement.setInt(3, Integer.parseInt(duration));
+            preparedStatement.setString(4, director);
+            preparedStatement.setString(5, selectedTitle);
+
+            preparedStatement.executeUpdate();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
     }
     public void deleteMovie() {
         try {
-            //TODO: Step 11 Prepare an SQL statement to select a list of titles from the table 'movies' in the database
+            //Step 11 Prepare an SQL statement to select a list of titles from the table 'movies' in the database
+            Statement statement = database.getConnection().createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT title FROM movies");
 
             JComboBox cmbTitles = new JComboBox<>();
 
-            //TODO: Step 12 The ResultSet will be used to populate the 'cmbTitles' combobox
-            cmbTitles.addItem("");
+            //Step 12 The ResultSet will be used to populate the 'cmbTitles' combobox
+            while (resultSet.next()) {
+                cmbTitles.addItem(resultSet.getString("title"));
+            }
 
             JOptionPane.showMessageDialog(this, cmbTitles, "Choose Movie Title", JOptionPane.PLAIN_MESSAGE);
 
-            //TODO: Step 13 Extract user selection from the 'cmbTitles' combobox
-            String selectedTitle = "";
+            //Step 13 Extract user selection from the 'cmbTitles' combobox
+            String selectedTitle = cmbTitles.getSelectedItem().toString();
 
             int result = JOptionPane.showConfirmDialog(this,"Are you confirm to delete "+selectedTitle+"?", "Delete Movie", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 
             if(result == JOptionPane.YES_OPTION) {
-                //TODO: Step 14 Prepare an SQL statement to delete the selected title from the table 'movies' in the database
+                //Step 14 Prepare an SQL statement to delete the selected title from the table 'movies' in the database
+                PreparedStatement preparedStatement = database.getConnection().prepareStatement("DELETE FROM movies WHERE title = ?");
+                preparedStatement.setString(1, selectedTitle);
 
+                preparedStatement.executeUpdate();
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -158,10 +208,18 @@ public class MoviesPanel extends JPanel {
 
     public void viewAll() {
         try {
-            //TODO: Step 15 Prepare an SQL statement to select a list of titles, year, duration, director from the table 'movies' in the database
+            //Step 15 Prepare an SQL statement to select a list of titles, year, duration, director from the table 'movies' in the database
+            Statement statement = database.getConnection().createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT title, year, duration, director FROM movies");
 
             String message = "";
-            //TODO: Step 16 The ResultSet will be used to concatenate the 'message' string
+            //Step 16 The ResultSet will be used to concatenate the 'message' string
+            while (resultSet.next()) {
+                message += "Title: " + resultSet.getString("title") +
+                        "\nYear: " + resultSet.getString("year") +
+                        "\nDuration: " + resultSet.getString("duration") +
+                        "\nDirector: " + resultSet.getString("director") +"\n\n";
+            }
 
             JOptionPane.showMessageDialog(this, message, "List of Movies", JOptionPane.PLAIN_MESSAGE);
 

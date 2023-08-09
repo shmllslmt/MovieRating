@@ -62,18 +62,23 @@ public class RatingsPanel extends JPanel {
     }
     public void addRating() {
         try {
-            //TODO: Step 17 Prepare an SQL statement to select a list of movieid, titles from the table 'movies' in the database
+            //Step 17 Prepare an SQL statement to select a list of movieid, titles from the table 'movies' in the database
+            Statement statement = database.getConnection().createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT movieid, title FROM movies");
 
-            //TODO: Step 18 The ResultSet will be used to create a Movie object that will populate the 'movies' arraylist
-            Movies movie = new Movies("", "");
-            movies.add(movie);
+
+            //Step 18 The ResultSet will be used to create a Movie object that will populate the 'movies' arraylist
+            while (resultSet.next()) {
+                Movies movie = new Movies(resultSet.getString("movieid"), resultSet.getString("title"));
+                movies.add(movie);
+            }
 
             JComboBox cmbTitles = new JComboBox<>(movies.toArray());
 
             JOptionPane.showMessageDialog(this, cmbTitles, "Choose Movie Title", JOptionPane.PLAIN_MESSAGE);
 
-            //TODO: Step 19 Extract the movie id based on user selection from the 'cmbTitles' combobox
-            int selectedMovie = 0;
+            //Step 19 Extract the movie id based on user selection from the 'cmbTitles' combobox
+            int selectedMovie = Integer.parseInt(((Movies)cmbTitles.getSelectedItem()).id);
 
             JPanel panel = new JPanel(new GridLayout(4, 2, 10, 10));
 
@@ -87,14 +92,29 @@ public class RatingsPanel extends JPanel {
 
             JOptionPane.showMessageDialog(this, panel, "Review Movie", JOptionPane.PLAIN_MESSAGE);
 
-            //TODO: Step 20 Extract user input from text fields
-            //TODO: Step 21 Prepare an SQL statement that will insert the rating, review and movieid to the 'reviews' table in the database based on the selected movie
+            //Step 20 Extract user input from text fields
+            int rating = Integer.parseInt(txtRating.getText());
+            String review = txtReview.getText();
 
-            int successful = 0;
+            //Step 21 Prepare an SQL statement that will insert the rating, review and movieid to the 'reviews' table in the database
+            PreparedStatement preparedStatement = database.getConnection().prepareStatement("INSERT INTO reviews (rating, review, movieid) VALUES (?,?,?)");
+            preparedStatement.setInt(1, rating);
+            preparedStatement.setString(2, review);
+            preparedStatement.setInt(3, selectedMovie);
+
+            int successful = preparedStatement.executeUpdate();
 
             if(successful > 0){
-                //TODO: Step 22 If the SQL statement is successfully executed, update the rating column in the 'movies' table to be the average of rating from the 'reviews' table (based on the selected movie)
+                //Step 22 If the SQL statement is successfully executed, update the rating column in the 'movies' table to be the average of rating from the 'reviews' table (based on the selected movie)
+                preparedStatement = database.getConnection().prepareStatement("UPDATE movies " +
+                        "SET rating = (SELECT AVG(rating) FROM reviews WHERE movieid = ?) " +
+                        "WHERE movieid = ?");
+                preparedStatement.setInt(1, selectedMovie);
+                preparedStatement.setInt(2, selectedMovie);
+
+                preparedStatement.executeUpdate();
             }
+            movies.clear();
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
         }
