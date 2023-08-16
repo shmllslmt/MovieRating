@@ -121,20 +121,28 @@ public class RatingsPanel extends JPanel {
     }
     public void viewRating() {
         try {
-            //TODO: Step 23 Prepare an SQL statement to select a list of movieid, titles from the table 'movies' in the database
+            //Step 23 Prepare an SQL statement to select a list of movieid, titles from the table 'movies' in the database
+            Statement statement = database.getConnection().createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT movieid, title FROM movies");
 
-            //TODO: Step 24 The ResultSet will be used to create a Movie object that will populate the 'movies' arraylist
-            Movies movie = new Movies("", "");
-            movies.add(movie);
+
+            //Step 24 The ResultSet will be used to create a Movie object that will populate the 'movies' arraylist
+            while (resultSet.next()) {
+                Movies movie = new Movies(resultSet.getString("movieid"), resultSet.getString("title"));
+                movies.add(movie);
+            }
 
             JComboBox cmbTitles = new JComboBox<>(movies.toArray());
 
             JOptionPane.showMessageDialog(this, cmbTitles, "Choose Movie Title", JOptionPane.PLAIN_MESSAGE);
 
-            //TODO: Step 25 Extract the movie id based on user selection from the 'cmbTitles' combobox
-            int selectedMovie = 0;
+            //Step 25 Extract the movie id based on user selection from the 'cmbTitles' combobox
+            int selectedMovie = Integer.parseInt(((Movies)cmbTitles.getSelectedItem()).id);
 
             //TODO: Step 26 Prepare an SQL statement to select a the title, year, duration, director, movie_rating, review_rating and review from the table 'movies' join with the table 'reviews in the database based on the selected movie
+            PreparedStatement preparedStatement = database.getConnection().prepareStatement("SELECT title, year, duration, director, movies.rating as rate, reviews.rating as rating, review FROM movies LEFT JOIN reviews ON movies.movieid = reviews.movieid WHERE movies.movieid = ?;");
+            preparedStatement.setInt(1, selectedMovie);
+            ResultSet reviewInfo = preparedStatement.executeQuery();
 
             String title = "";
             String year = "";
@@ -144,7 +152,20 @@ public class RatingsPanel extends JPanel {
             String message = "";
             int count = 0;
 
-            //TODO: Step 27 The ResultSet will be used to concatenate the 'message' string
+            //Step 27 The ResultSet will be used to concatenate the 'message' string
+            while (reviewInfo.next()) {
+                if(title.isBlank() || year.isBlank() || duration.isBlank() || director.isBlank() || rating.isBlank()) {
+                    title = reviewInfo.getString("title");
+                    year = reviewInfo.getString("year");
+                    duration = reviewInfo.getString("duration");
+                    director = reviewInfo.getString("director");
+                    rating = reviewInfo.getString("rate");
+
+                    message = "Title: " + title + "\nYear: " + year + "\nDuration: " + duration + "\nDirector: " + director + "\nAverage Rating: " + rating + "\n\n\n";
+                }
+                message += "Rating      Reviews\n";
+                message += String.format("%10s", reviewInfo.getString("rating")) + "      " + reviewInfo.getString("review") + "\n";
+            }
 
             JOptionPane.showMessageDialog(this, message, "Movie Rating", JOptionPane.PLAIN_MESSAGE);
         } catch (Exception ex) {
